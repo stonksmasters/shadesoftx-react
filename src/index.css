@@ -1,0 +1,143 @@
+@import "tailwindcss";
+
+/* -----------------------------
+   Color Variables for Themes
+   ----------------------------- */
+
+/* Base Light Theme (default) */
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f3f4f6;
+  --color-border: #e5e7eb;
+  --color-text: #111827;
+  --color-accent: #ef4444;
+  --color-primary: #1e40af;
+  --color-primary-content: #ffffff;
+}
+
+/* Dark mode (default) */
+[data-dark="true"] {
+  --color-bg: #111827;
+  --color-surface: #1f2937;
+  --color-border: #374151;
+  --color-text: #f9fafb;
+  --color-accent: #ef4444;
+  --color-primary: #3b82f6;
+  --color-primary-content: #f9fafb;
+}
+
+/* Blue theme */
+[data-theme="blue"] {
+  --color-bg: #ebf8ff;
+  --color-surface: #e0f2fe;
+  --color-border: #bae6fd;
+  --color-text: #1e3a8a;
+  --color-accent: #60a5fa;
+  --color-primary: #2563eb;
+  --color-primary-content: #ffffff;
+}
+
+[data-theme="blue"][data-dark="true"] {
+  --color-bg: #000000;
+  --color-surface: #1e40af;
+  --color-border: #3b82f6;
+  --color-text: #f3f4f6;
+  --color-accent: #60a5fa;
+  --color-primary: #3b82f6;
+  --color-primary-content: #ffffff;
+}
+
+/* Red theme */
+[data-theme="red"] {
+  --color-bg: #fee2e2;
+  --color-surface: #fecaca;
+  --color-border: #fca5a5;
+  --color-text: #991b1b;
+  --color-accent: #ef4444;
+  --color-primary: #b91c1c;
+  --color-primary-content: #ffffff;
+}
+
+[data-theme="red"][data-dark="true"] {
+  --color-bg: #000000;
+  --color-surface: #b91c1c;
+  --color-border: #ef4444;
+  --color-text: #fef2f2;
+  --color-accent: #f87171;
+  --color-primary: #dc2626;
+  --color-primary-content: #ffffff;
+}
+
+/* Texas theme (balanced) */
+[data-theme="texas"] {
+  --color-bg: #fff7ed;
+  --color-surface: #f0f9ff;
+  --color-border: #c7d2fe;
+  --color-text: #1e40af;
+  --color-accent: #ef4444;
+  --color-primary: #2563eb;
+  --color-primary-content: #ffffff;
+}
+
+[data-theme="texas"][data-dark="true"] {
+  --color-bg: #000000;
+  --color-surface: #991b1b;
+  --color-border: #3b82f6;
+  --color-text: #fef2f2;
+  --color-accent: #ef4444;
+  --color-primary: #3b82f6;
+  --color-primary-content: #ffffff;
+}
+
+/* -----------------------------
+   Apply Variables to Tailwind
+   ----------------------------- */
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+.bg-bg {
+  background-color: var(--color-bg);
+}
+
+.bg-surface {
+  background-color: var(--color-surface);
+}
+
+.border-border {
+  border-color: var(--color-border);
+}
+
+.text-muted {
+  color: var(--color-text);
+}
+
+.text-rgb {
+  color: var(--color-text);
+}
+
+.text-accent {
+  color: var(--color-accent);
+}
+
+.bg-primary {
+  background-color: var(--color-primary);
+}
+
+.text-primary-content {
+  color: var(--color-primary-content);
+}
+
+.hover\:bg-primary:hover {
+  background-color: var(--color-primary);
+}
+
+.hover\:text-primary-content:hover {
+  color: var(--color-primary-content);
+}
+
+.bg-accent {
+  background-color: var(--color-accent);
+}
