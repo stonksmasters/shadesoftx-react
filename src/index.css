@@ -1,96 +1,270 @@
 @import "tailwindcss";
 
 /* -----------------------------
+   Tiny reset to eliminate default browser gaps
+   ----------------------------- */
+:root { box-sizing: border-box; }
+*,
+*::before,
+*::after { box-sizing: inherit; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* -----------------------------
    Color Variables for Themes
    ----------------------------- */
 
-/* Base Light Theme (default) */
+/* NOTE:
+   - This file keeps the same theme variable names used across the app
+     so theme toggling (data-theme / data-dark on <html>) continues to work.
+   - Added *-rgb helper variables plus overlay/panel helpers to enable
+     translucent overlays that adapt to each theme without breaking
+     the existing theme switching logic.
+*/
+
+/* Helper muted variable used for secondary text */
 :root {
-  --color-bg: #ffffff;
-  --color-surface: #f3f4f6;
-  --color-border: #e5e7eb;
-  --color-text: #111827;
-  --color-accent: #ef4444;
-  --color-primary: #1e40af;
-  --color-primary-content: #ffffff;
+  --color-bg: #FAFBFD;
+  --color-bg-rgb: 250, 251, 253;
+
+  --color-surface: #FFFFFF;
+  --color-surface-rgb: 255, 255, 255;
+
+  --color-border: #E6E9F2;
+  --color-border-rgb: 230, 233, 242;
+
+  --color-text: #0B1220;
+  --color-text-rgb: 11, 18, 32;
+
+  --color-muted: #6B7280;
+  --color-muted-rgb: 107, 114, 128;
+
+  --color-accent: #F97316;
+  --color-accent-rgb: 249, 115, 22;
+
+  --color-primary: #2563EB;
+  --color-primary-rgb: 37, 99, 235;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255, 255, 255;
+
+  /* Overlay used on top of images (default for light images) */
+  --image-overlay: rgba(11, 18, 32, 0.46);
+  --panel-surface-alpha: 0.88;
+
+  /* Hero text color (explicit so headings are always readable over images).
+     You can override per-theme if a theme absolutely needs a different treatment. */
+  --hero-text: #ffffff;
 }
 
-/* Dark mode (default) */
+/* Dark mode (default) - balanced, not pure black */
 [data-dark="true"] {
-  --color-bg: #111827;
-  --color-surface: #1f2937;
-  --color-border: #374151;
-  --color-text: #f9fafb;
-  --color-accent: #ef4444;
-  --color-primary: #3b82f6;
-  --color-primary-content: #f9fafb;
+  --color-bg: #0B1220;
+  --color-bg-rgb: 11, 18, 32;
+
+  --color-surface: #0F1724;
+  --color-surface-rgb: 15, 23, 36;
+
+  --color-border: #1F2937;
+  --color-border-rgb: 31, 41, 55;
+
+  --color-text: #E6EDF5;
+  --color-text-rgb: 230, 237, 245;
+
+  --color-muted: #9AA6B2;
+  --color-muted-rgb: 154, 166, 178;
+
+  --color-accent: #F97316;
+  --color-accent-rgb: 249, 115, 22;
+
+  --color-primary: #3B82F6;
+  --color-primary-rgb: 59, 130, 246;
+
+  --color-primary-content: #0B1220;
+  --color-primary-content-rgb: 11, 18, 32;
+
+  --image-overlay: rgba(0, 0, 0, 0.56);
+  --panel-surface-alpha: 0.92;
+
+  --hero-text: #ffffff;
 }
 
 /* Blue theme */
 [data-theme="blue"] {
-  --color-bg: #ebf8ff;
-  --color-surface: #e0f2fe;
-  --color-border: #bae6fd;
-  --color-text: #1e3a8a;
-  --color-accent: #60a5fa;
-  --color-primary: #2563eb;
-  --color-primary-content: #ffffff;
-}
+  --color-bg: #F5FBFF;
+  --color-bg-rgb: 245, 251, 255;
 
+  --color-surface: #FFFFFF;
+  --color-surface-rgb: 255, 255, 255;
+
+  --color-border: #D7EEFF;
+  --color-border-rgb: 215, 238, 255;
+
+  --color-text: #08304B;
+  --color-text-rgb: 8, 48, 75;
+
+  --color-muted: #4B6B82;
+  --color-muted-rgb: 75, 107, 130;
+
+  --color-accent: #60A5FA;
+  --color-accent-rgb: 96, 165, 250;
+
+  --color-primary: #1E3A8A;
+  --color-primary-rgb: 30, 58, 138;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255, 255, 255;
+
+  /* blue theme can keep white hero text */
+  --hero-text: #ffffff;
+}
 [data-theme="blue"][data-dark="true"] {
-  --color-bg: #000000;
-  --color-surface: #1e40af;
-  --color-border: #3b82f6;
-  --color-text: #f3f4f6;
-  --color-accent: #60a5fa;
-  --color-primary: #3b82f6;
-  --color-primary-content: #ffffff;
+  --color-bg: #07122A;
+  --color-bg-rgb: 7, 18, 42;
+
+  --color-surface: #0B2236;
+  --color-surface-rgb: 11, 34, 54;
+
+  --color-border: #12324A;
+  --color-border-rgb: 18, 50, 74;
+
+  --color-text: #EAF6FF;
+  --color-text-rgb: 234, 246, 255;
+
+  --color-muted: #9BC9FF;
+  --color-muted-rgb: 155, 201, 255;
+
+  --color-accent: #60A5FA;
+  --color-accent-rgb: 96, 165, 250;
+
+  --color-primary: #3B82F6;
+  --color-primary-rgb: 59, 130, 246;
+
+  --color-primary-content: #0B1220;
+  --color-primary-content-rgb: 11, 18, 32;
+
+  --hero-text: #ffffff;
 }
 
 /* Red theme */
 [data-theme="red"] {
-  --color-bg: #fee2e2;
-  --color-surface: #fecaca;
-  --color-border: #fca5a5;
-  --color-text: #991b1b;
-  --color-accent: #ef4444;
-  --color-primary: #b91c1c;
-  --color-primary-content: #ffffff;
-}
+  --color-bg: #FFF6F6;
+  --color-bg-rgb: 255, 246, 246;
 
+  --color-surface: #FFFFFF;
+  --color-surface-rgb: 255, 255, 255;
+
+  --color-border: #FBDCDC;
+  --color-border-rgb: 251, 220, 220;
+
+  --color-text: #3B0D0D;
+  --color-text-rgb: 59, 13, 13;
+
+  --color-muted: #7F1D1D;
+  --color-muted-rgb: 127, 29, 29;
+
+  --color-accent: #EF4444;
+  --color-accent-rgb: 239, 68, 68;
+
+  --color-primary: #B91C1C;
+  --color-primary-rgb: 185, 28, 28;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255, 255, 255;
+
+  --hero-text: #ffffff;
+}
 [data-theme="red"][data-dark="true"] {
-  --color-bg: #000000;
-  --color-surface: #b91c1c;
-  --color-border: #ef4444;
-  --color-text: #fef2f2;
-  --color-accent: #f87171;
-  --color-primary: #dc2626;
-  --color-primary-content: #ffffff;
+  --color-bg: #0A0A0A;
+  --color-bg-rgb: 10, 10, 10;
+
+  --color-surface: #221010;
+  --color-surface-rgb: 34, 16, 16;
+
+  --color-border: #3A1212;
+  --color-border-rgb: 58, 18, 18;
+
+  --color-text: #FFEDED;
+  --color-text-rgb: 255, 237, 237;
+
+  --color-muted: #C76B6B;
+  --color-muted-rgb: 199, 107, 107;
+
+  --color-accent: #EF4444;
+  --color-accent-rgb: 239, 68, 68;
+
+  --color-primary: #DC2626;
+  --color-primary-rgb: 220, 38, 38;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255, 255, 255;
+
+  --hero-text: #ffffff;
 }
 
-/* Texas theme (balanced) */
+/* Texas theme */
 [data-theme="texas"] {
-  --color-bg: #fff7ed;
-  --color-surface: #f0f9ff;
-  --color-border: #c7d2fe;
-  --color-text: #1e40af;
-  --color-accent: #ef4444;
-  --color-primary: #2563eb;
-  --color-primary-content: #ffffff;
-}
+  --color-bg: #FFF7ED;
+  --color-bg-rgb: 255, 247, 237;
 
+  --color-surface: #FFFFFF;
+  --color-surface-rgb: 255, 255, 255;
+
+  --color-border: #EDE7F7;
+  --color-border-rgb: 237, 231, 247;
+
+  --color-text: #1F2937;
+  --color-text-rgb: 31, 41, 55;
+
+  --color-muted: #6B7280;
+  --color-muted-rgb: 107, 114, 128;
+
+  --color-accent: #EF4444;
+  --color-accent-rgb: 239, 68, 68;
+
+  --color-primary: #2563EB;
+  --color-primary-rgb: 37, 99, 235;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255, 255, 255;
+
+  --hero-text: #ffffff;
+}
 [data-theme="texas"][data-dark="true"] {
-  --color-bg: #000000;
-  --color-surface: #991b1b;
-  --color-border: #3b82f6;
-  --color-text: #fef2f2;
-  --color-accent: #ef4444;
-  --color-primary: #3b82f6;
-  --color-primary-content: #ffffff;
+  --color-bg: #0C0F12;
+  --color-bg-rgb: 12, 15, 18;
+
+  --color-surface: #151515;
+  --color-surface-rgb: 21, 21, 21;
+
+  --color-border: #262626;
+  --color-border-rgb: 38, 38, 38;
+
+  --color-text: #F3F4F6;
+  --color-text-rgb: 243, 244, 246;
+
+  --color-muted: #9AA6B2;
+  --color-muted-rgb: 154, 166, 178;
+
+  --color-accent: #EF4444;
+  --color-accent-rgb: 239, 68, 68;
+
+  --color-primary: #3B82F6;
+  --color-primary-rgb: 59, 130, 246;
+
+  --color-primary-content: #0B1220;
+  --color-primary-content-rgb: 11, 18, 32;
+
+  --hero-text: #ffffff;
 }
 
 /* -----------------------------
-   Apply Variables to Tailwind
+   Apply Variables to Tailwind-friendly utility classes
+   (keep these simple and consistent)
    ----------------------------- */
 
 body {
@@ -98,46 +272,192 @@ body {
   color: var(--color-text);
 }
 
-.bg-bg {
-  background-color: var(--color-bg);
-}
+.bg-bg { background-color: var(--color-bg); }
+.bg-surface { background-color: var(--color-surface); }
+.border-border { border-color: var(--color-border); }
+.text-muted { color: var(--color-muted); }
+.text-rgb { color: var(--color-text); }
 
-.bg-surface {
-  background-color: var(--color-surface);
-}
+.text-accent { color: var(--color-accent); }
+.bg-accent { background-color: var(--color-accent); }
 
-.border-border {
-  border-color: var(--color-border);
-}
+.bg-primary { background-color: var(--color-primary); }
+.text-primary-content { color: var(--color-primary-content); }
 
-.text-muted {
-  color: var(--color-text);
-}
+.hover\:bg-primary:hover { background-color: var(--color-primary); }
+.hover\:text-primary-content:hover { color: var(--color-primary-content); }
 
-.text-rgb {
-  color: var(--color-text);
-}
-
-.text-accent {
-  color: var(--color-accent);
-}
-
-.bg-primary {
+/* Minor helpers */
+.btn-primary {
   background-color: var(--color-primary);
-}
-
-.text-primary-content {
   color: var(--color-primary-content);
 }
-
-.hover\:bg-primary:hover {
-  background-color: var(--color-primary);
-}
-
-.hover\:text-primary-content:hover {
-  color: var(--color-primary-content);
-}
-
-.bg-accent {
+.btn-accent {
   background-color: var(--color-accent);
+  color: var(--color-primary-content);
+}
+
+/* -----------------------------
+   Accessibility & Overlay Helpers
+   (add theme-aware helpers without altering existing functionality)
+   ----------------------------- */
+
+/* Overlay to place on top of images for readability.
+   Use <div class="overlay" /> inside any image container.
+   The overlay color is controlled by --image-overlay which each theme can tune.
+*/
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--image-overlay);
+  transition: background 0.28s ease;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Make the desktop overlay slightly stronger by default so headings
+   have a reliable backdrop (keeps mobile overlays lighter for visual depth) */
+@media (min-width: 769px) {
+  .overlay {
+    /* multiply the configured overlay with a small extra darkness */
+    background: linear-gradient(rgba(0,0,0,0.08), rgba(0,0,0,0.08)), var(--image-overlay);
+  }
+}
+
+/* Panel used for readable text blocks on top of images.
+   Uses the theme surface color at a slight alpha so it adapts to light/dark themes.
+*/
+.panel {
+  background-color: rgba(var(--color-surface-rgb), var(--panel-surface-alpha));
+  color: var(--color-text);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  border: 1px solid rgba(var(--color-border-rgb, 230,233,242), 0.65);
+  z-index: 20;
+}
+
+/* If you need tiny readable blocks on top of images, use text-on-image
+   which gives a semi-opaque backing tuned for legibility.
+*/
+.text-on-image {
+  background-color: rgba(var(--color-surface-rgb), 0.9);
+  color: var(--color-text);
+  padding: 0.4rem 0.6rem;
+  border-radius: 9999px;
+  display: inline-block;
+  font-weight: 700;
+}
+
+/* Utility for subtle text emphasis on top of images (light text) */
+.text-on-image--light {
+  background-color: rgba(255,255,255,0.06);
+  color: var(--color-primary-content);
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+}
+
+/* HERO-TEXT helpers for large headings (strong text-shadow + consistent color) */
+.hero-heading {
+  color: var(--hero-text) !important;
+  text-shadow: 0 10px 28px rgba(0,0,0,0.7);
+  line-height: 0.98;
+  letter-spacing: -0.5px;
+}
+
+/* Subtext on hero for better legibility */
+.hero-subtext {
+  color: rgba(255,255,255,0.92);
+  text-shadow: 0 6px 18px rgba(0,0,0,0.55);
+}
+
+/* NAVBAR helper to make the sticky nav more legible across images and themes:
+   - slightly more opaque surface
+   - preserve the backdrop-blur effect
+   - add a pseudo-element overlay so browsers that don't support backdrop-filter
+     still get a consistent opaque backdrop (prevents the "crystal clear" look)
+*/
+.navbar-surface {
+  position: relative; /* required for ::before overlay */
+  z-index: 60; /* keep above hero imagery */
+  background-color: rgba(var(--color-surface-rgb), 0.84);
+  backdrop-filter: blur(10px) saturate(110%);
+  -webkit-backdrop-filter: blur(10px) saturate(110%);
+  border-bottom: 1px solid rgba(var(--color-border-rgb), 0.15);
+  box-shadow: 0 6px 22px rgba(2,6,23,0.28);
+}
+
+/* Pseudo overlay provides a subtle tint on top of the backdrop.
+   This is the primary fallback when backdrop-filter is missing and
+   also helps tame bright imagery under the nav.
+*/
+.navbar-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.08),
+    rgba(0,0,0,0.03)
+  );
+  border-bottom: 1px solid rgba(var(--color-border-rgb), 0.06);
+  z-index: -1; /* keep behind inline nav content but above page */
+}
+
+/* Slightly stronger overlay in dark mode to ensure contrast */
+[data-dark="true"] .navbar-surface::before {
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.18),
+    rgba(0,0,0,0.08)
+  );
+}
+
+/* Small utility if you need stronger link contrast in the navbar */
+.navbar-surface a {
+  color: var(--color-text);
+}
+
+/* Announcement bar surface: slightly blurred + tinted overlay so it's not crystal-clear */
+.announcement-surface {
+  position: relative;
+  z-index: 70;
+  /* tint uses accent color with low alpha to keep brand hue but not fully opaque */
+  background-color: rgba(var(--color-accent-rgb, 249,115,22), 0.10);
+  backdrop-filter: blur(6px) saturate(105%);
+  -webkit-backdrop-filter: blur(6px) saturate(105%);
+  color: var(--color-text);
+}
+
+/* pseudo overlay that ensures consistent tint even when backdrop-filter isn't supported */
+.announcement-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* subtle darkening to keep announcement text legible on bright photos */
+  background: linear-gradient(to bottom, rgba(0,0,0,0.06), rgba(0,0,0,0.03));
+  z-index: -1; /* behind content but above the page */
+}
+
+/* slightly stronger backdrop for large screens where readability matters more */
+@media (min-width: 769px) {
+  .announcement-surface {
+    background-color: rgba(var(--color-accent-rgb, 249,115,22), 0.12);
+  }
+}
+
+/* dark theme: use a darker tint to keep contrast */
+[data-dark="true"] .announcement-surface {
+  background-color: rgba(0,0,0,0.32);
+}
+[data-dark="true"] .announcement-surface::before {
+  background: linear-gradient(to bottom, rgba(0,0,0,0.12), rgba(0,0,0,0.06));
+}
+
+/* Accessibility: ensure links inside announcement remain readable */
+.announcement-surface a {
+  color: var(--color-primary);
+  text-decoration-thickness: 2px;
 }

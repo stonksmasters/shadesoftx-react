@@ -45,8 +45,8 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 shadow-sm">
-      {/* Announcement bar */}
-      <div className="bg-[var(--color-accent)/10] text-[var(--color-text)] text-sm font-medium py-2 text-center">
+      {/* Announcement bar - use announcement-surface to provide blur + overlay so it never looks crystal-clear */}
+      <div className="announcement-surface text-[var(--color-text)] text-sm font-medium py-2 text-center">
         Don’t see your area?{" "}
         <a
           href="#contact"
@@ -56,8 +56,8 @@ export default function Navbar() {
         </a>
       </div>
 
-      {/* Main nav */}
-      <nav className="backdrop-blur-md bg-[var(--color-bg)/80] border-b border-[var(--color-border)] h-[72px]">
+      {/* Main nav - added 'navbar-surface' for consistent opaque backdrop */}
+      <nav className="navbar-surface backdrop-blur-md border-b border-[var(--color-border)] h-[72px]">
         <div className="mx-auto max-w-screen-xl h-full px-6 flex items-center justify-between">
           {/* Logo */}
           <Link
@@ -169,9 +169,8 @@ export default function Navbar() {
               </Link>
             </li>
 
-            <li className="px-6 py-4 flex justify-center">
-              <ThemeToggle />
-            </li>
+            {/* ThemeToggle removed from the mobile dropdown to avoid duplication.
+                The ThemeToggle in the sticky navbar (next to the hamburger) remains. */}
           </ul>
         </div>
       </nav>
