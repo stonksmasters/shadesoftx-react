@@ -1,0 +1,41 @@
+.services-toggle {
+  display: inline-flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.services-toggle button {
+  padding: 8px 14px;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+}
+.services-toggle button.active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+.service-card {
+  padding: 16px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+.service-card__title {
+  margin: 0 0 8px 0;
+  font-size: 1.05rem;
+}
+.service-card__desc {
+  margin: 0 0 12px 0;
+  color: #555;
+}
+.service-card__cta a {
+  color: #0b66ff;
+  text-decoration: none;
+}
