@@ -14,7 +14,7 @@ function App() {
         <Hero />
         <Services />
         <Contact />
-        <Reviews />
+         <Reviews intervalMs={2000} pauseAfterMs={3000} />
       </main>
       <Footer />
     </BrowserRouter>

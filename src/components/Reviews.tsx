@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 type Review = {
@@ -137,31 +137,57 @@ function Stars({ value }: { value: number }) {
   );
 }
 
-export default function Reviews() {
-  // We'll build a looping track by prepending & appending a copy of the dataset.
-  // The track will begin positioned at the middle copy so users can scroll left/right seamlessly.
+type ReviewsProps = {
+  intervalMs?: number;
+  pauseAfterMs?: number;
+  scrollDurationMs?: number;
+};
+
+export default function Reviews({
+  intervalMs = 3800,
+  pauseAfterMs = 3000,
+  scrollDurationMs = 600,
+}: ReviewsProps) {
   const trackRef = useRef<HTMLDivElement | null>(null);
 
-  // autoplay uses RAF for silky motion
-  const rafRef = useRef<number | null>(null);
+  // autoplay uses per-card interval
+  const autoplayIntervalRef = useRef<number | null>(null);
   const resumeTimerRef = useRef<number | null>(null);
-  const lastFrameRef = useRef<number | null>(null);
+
+  // smooth scroll raf handle (so we can cancel)
+  const smoothRafRef = useRef<number | null>(null);
+
+  // interaction and lifecycle
+  const lastInteractionAtRef = useRef<number>(0);
+  const prefersReducedMotionRef = useRef<boolean>(false);
+  const visibleRef = useRef<boolean>(true);
 
   // drag state for pointer interactions
   const drag = useRef({ startX: 0, scrollLeft: 0, dragging: false });
 
   // create extended list: [copy, original, copy]
   const reviews = [...baseReviews];
-  const extended = [...reviews.map((r) => ({ ...r, id: `m-${r.id}` })), ...reviews, ...reviews.map((r) => ({ ...r, id: `p-${r.id}` }))];
+  const extended = [
+    ...reviews.map((r) => ({ ...r, id: `m-${r.id}` })),
+    ...reviews,
+    ...reviews.map((r) => ({ ...r, id: `p-${r.id}` })),
+  ];
 
   // measured card width (includes gap) and derived values
   const cardWidthRef = useRef<number>(0);
   const singleSetWidthRef = useRef<number>(0);
   const itemsCount = reviews.length;
 
-  // autoplay tuning
-  const speedPxPerSec = 70; // px/s for smooth feel
-  const pauseAfterMs = 3000; // pause duration after any interaction
+  // active/scroll bookkeeping
+  const scrollEndDebounceRef = useRef<number | null>(null);
+
+  // animation lock for preventing input during animation
+  const isAnimatingRef = useRef<boolean>(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  function setAnimating(v: boolean) {
+    isAnimatingRef.current = v;
+    setIsAnimating(v);
+  }
 
   // Measure card width and set initial scroll position to the middle set
   useEffect(() => {
@@ -169,14 +195,17 @@ export default function Reviews() {
       const track = trackRef.current;
       if (!track) return;
       const firstCard = track.querySelector<HTMLElement>("[data-review-card]");
-      const gap = parseInt(getComputedStyle(track).gap || getComputedStyle(track).columnGap || "16", 10) || 16;
+      const gap = parseInt(getComputedStyle(track).gap || (getComputedStyle(track) as any).columnGap || "16", 10) || 16;
       const cardWidth = firstCard ? firstCard.clientWidth : Math.min(track.clientWidth * 0.86, 360);
       cardWidthRef.current = cardWidth + gap;
       singleSetWidthRef.current = cardWidthRef.current * itemsCount;
 
       // Position at middle set (the second chunk)
       requestAnimationFrame(() => {
-        if (track) track.scrollLeft = singleSetWidthRef.current;
+        if (track) {
+          track.scrollLeft = singleSetWidthRef.current;
+          updateActiveCard();
+        }
       });
     }
 
@@ -189,49 +218,140 @@ export default function Reviews() {
       window.removeEventListener("orientationchange", measure);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [itemsCount]);
 
-  // RAF-based autoplay
+  // smooth scroll helper (cancellable) with automatic snap disabling and animation lock
+  function stopSmoothScroll() {
+    if (smoothRafRef.current) {
+      cancelAnimationFrame(smoothRafRef.current);
+      smoothRafRef.current = null;
+    }
+    const t = trackRef.current;
+    if (t) t.classList.remove("no-snap");
+    setAnimating(false);
+  }
+  function smoothScrollTo(track: HTMLDivElement, targetLeft: number, duration: number, onComplete?: () => void) {
+    stopSmoothScroll();
+    // lock inputs while animating
+    setAnimating(true);
+
+    // temporarily disable browser snapping so animation is smooth
+    track.classList.add("no-snap");
+
+    const start = performance.now();
+    const from = track.scrollLeft;
+    const delta = targetLeft - from;
+    if (duration <= 0) {
+      track.scrollLeft = targetLeft;
+      track.classList.remove("no-snap");
+      setAnimating(false);
+      onComplete?.();
+      return;
+    }
+    // easeInOutCubic
+    const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const v = ease(t);
+      track.scrollLeft = Math.round(from + delta * v);
+      if (t < 1) {
+        smoothRafRef.current = requestAnimationFrame(step);
+      } else {
+        smoothRafRef.current = null;
+        track.classList.remove("no-snap");
+        setAnimating(false);
+        onComplete?.();
+      }
+    };
+    smoothRafRef.current = requestAnimationFrame(step);
+  }
+
+  // Interval-based autoplay
   useEffect(() => {
+    try {
+      prefersReducedMotionRef.current = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    } catch {
+      prefersReducedMotionRef.current = false;
+    }
+
+    function handleVisibility() {
+      if (typeof document === "undefined") return;
+      if (document.hidden) {
+        visibleRef.current = false;
+        stopAutoplay();
+      } else {
+        visibleRef.current = true;
+        scheduleResume();
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    let io: IntersectionObserver | null = null;
+    try {
+      if (typeof IntersectionObserver !== "undefined" && trackRef.current) {
+        io = new IntersectionObserver(
+          (entries) => {
+            const e = entries[0];
+            visibleRef.current = e.isIntersecting;
+            if (!e.isIntersecting) stopAutoplay();
+            else scheduleResume();
+          },
+          { threshold: 0.2 }
+        );
+        if (trackRef.current) io.observe(trackRef.current);
+      }
+    } catch {}
+
     startAutoplay();
+
     return () => {
       stopAutoplay();
       clearResumeTimer();
+      document.removeEventListener("visibilitychange", handleVisibility);
+      if (io) {
+        try {
+          io.disconnect();
+        } catch {}
+      }
+      stopSmoothScroll();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [intervalMs, pauseAfterMs, scrollDurationMs]);
 
   function startAutoplay() {
-    if (rafRef.current) return;
-    lastFrameRef.current = performance.now();
-    const loop = (now: number) => {
+    if (autoplayIntervalRef.current) return;
+    if (prefersReducedMotionRef.current) return;
+    if (typeof document !== "undefined" && document.hidden) return;
+    if (!visibleRef.current) return;
+
+    autoplayIntervalRef.current = window.setInterval(() => {
+      // don't run autoplay while a programmatic animation is already underway
+      if (isAnimatingRef.current) return;
+      const last = lastInteractionAtRef.current || 0;
+      if (Date.now() - last < pauseAfterMs) return;
       const track = trackRef.current;
-      if (!track) {
-        rafRef.current = null;
-        return;
-      }
-      const last = lastFrameRef.current ?? now;
-      // clamp dt to avoid large jumps after tab hidden
-      const dt = Math.min(40, Math.max(8, now - last));
-      lastFrameRef.current = now;
+      if (!track) return;
 
-      const dx = (speedPxPerSec * dt) / 1000;
-      track.scrollLeft = track.scrollLeft + dx;
+      const step = cardWidthRef.current || Math.min(track.clientWidth * 0.86, 360);
+      const single = singleSetWidthRef.current || step * itemsCount;
+      const offset = ((track.scrollLeft - single) % single + single) % single;
+      const desired = offset + step;
+      const targetOffset = ((desired % single) + single) % single;
+      const target = single + targetOffset;
 
-      // normalize when reaching copies
-      normalizeScrollIfNeeded(track);
-
-      rafRef.current = requestAnimationFrame(loop);
-    };
-    rafRef.current = requestAnimationFrame(loop);
+      smoothScrollTo(track, target, scrollDurationMs, () => {
+        normalizeScrollIfNeeded(track);
+        updateActiveCard();
+      });
+    }, intervalMs) as unknown as number;
   }
 
   function stopAutoplay() {
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
+    if (autoplayIntervalRef.current) {
+      clearInterval(autoplayIntervalRef.current);
+      autoplayIntervalRef.current = null;
     }
-    lastFrameRef.current = null;
   }
 
   function clearResumeTimer() {
@@ -241,41 +361,90 @@ export default function Reviews() {
     }
   }
 
-  // Pause autoplay on user interaction and resume after pauseAfterMs of inactivity.
-  // Each interaction resets the timer.
-  function pauseForInteraction() {
-    stopAutoplay();
+  function scheduleResume() {
     clearResumeTimer();
-    // reset timer with every interaction
     resumeTimerRef.current = window.setTimeout(() => {
       resumeTimerRef.current = null;
-      lastFrameRef.current = performance.now();
       startAutoplay();
     }, pauseAfterMs);
   }
 
-  // helper to normalize loop when user scrolls into copies
-  function normalizeScrollIfNeeded(track: HTMLDivElement) {
+  // Pause autoplay on user interaction and resume after pauseAfterMs of inactivity.
+  // If an animation is running we ignore user inputs (per requirement).
+  function pauseForInteraction() {
+    // if animating, ignore the interaction entirely
+    if (isAnimatingRef.current) return;
+    stopAutoplay();
+    clearResumeTimer();
+    lastInteractionAtRef.current = Date.now();
+    stopSmoothScroll();
+    const t = trackRef.current;
+    if (t) t.classList.remove("no-snap");
+    resumeTimerRef.current = window.setTimeout(() => {
+      resumeTimerRef.current = null;
+      startAutoplay();
+    }, pauseAfterMs);
+  }
+
+  // helper to normalize loop when user scrolls into copies (silent rebase)
+  function normalizeScrollIfNeeded(track: HTMLDivElement | null) {
+    if (!track) return;
     const single = singleSetWidthRef.current;
     if (!single) return;
 
-    if (track.scrollLeft <= single * 0.5) {
-      // into first copy -> jump to middle
-      track.scrollLeft = track.scrollLeft + single;
-    } else if (track.scrollLeft >= single * 1.5) {
-      // into last copy -> jump to middle
-      track.scrollLeft = track.scrollLeft - single;
-    }
+    const total = track.scrollLeft;
+    const min = single * 0.25;
+    const max = single * 1.75;
+    if (total > min && total < max) return;
+
+    const offset = ((total - single) % single + single) % single;
+    const mapped = single + offset;
+    if (Math.abs(mapped - total) <= 1) return;
+    // silent jump to equivalent position inside central set
+    track.scrollLeft = mapped;
   }
 
-  // scroll by one card (used by arrow buttons and keyboard)
-  function scrollByCard(direction = 1) {
+  // update which card is visually active (centered) and toggle a class for pop
+  function updateActiveCard() {
     const track = trackRef.current;
     if (!track) return;
     const step = cardWidthRef.current || Math.min(track.clientWidth * 0.86, 360);
-    const left = clamp(track.scrollLeft + direction * step);
-    pauseForInteraction();
-    track.scrollTo({ left, behavior: "smooth" });
+    const single = singleSetWidthRef.current || step * itemsCount;
+    const offset = ((track.scrollLeft - single) % single + single) % single;
+    const centerIndex = Math.round(offset / step);
+    const centralStart = itemsCount; // original set starts at this child index
+    const targetIndex = centralStart + centerIndex;
+
+    const children = Array.from(track.children) as HTMLElement[];
+    children.forEach((el, i) => {
+      if (i === targetIndex) el.classList.add("reviews-card-active");
+      else el.classList.remove("reviews-card-active");
+    });
+  }
+
+  // scroll by one card (used by arrow buttons and keyboard)
+  function scrollByCard(direction = 1, markInteraction = true) {
+    // if animating currently, ignore input to prevent cancel/restart
+    if (isAnimatingRef.current) return;
+
+    const track = trackRef.current;
+    if (!track) return;
+
+    if (markInteraction) pauseForInteraction();
+
+    const step = cardWidthRef.current || Math.min(track.clientWidth * 0.86, 360);
+    const single = singleSetWidthRef.current || step * itemsCount;
+    const offset = ((track.scrollLeft - single) % single + single) % single;
+    const desired = offset + direction * step;
+    const targetOffset = ((desired % single) + single) % single;
+    const target = single + targetOffset;
+
+    if (markInteraction) pauseForInteraction();
+    smoothScrollTo(track, target, scrollDurationMs, () => {
+      normalizeScrollIfNeeded(track);
+      updateActiveCard();
+    });
+    if (markInteraction) lastInteractionAtRef.current = Date.now();
   }
 
   function clamp(value: number) {
@@ -287,6 +456,8 @@ export default function Reviews() {
 
   // pointer handlers for drag-to-scroll
   function onPointerDown(e: React.PointerEvent) {
+    // ignore interactions while animating
+    if (isAnimatingRef.current) return;
     const track = trackRef.current;
     if (!track) return;
     drag.current.dragging = true;
@@ -297,26 +468,56 @@ export default function Reviews() {
   }
 
   function onPointerMove(e: React.PointerEvent) {
+    if (isAnimatingRef.current) return;
     if (!drag.current.dragging) return;
     const track = trackRef.current;
     if (!track) return;
     const dx = e.clientX - drag.current.startX;
     track.scrollLeft = clamp(drag.current.scrollLeft - dx);
+
+    if (scrollEndDebounceRef.current) {
+      clearTimeout(scrollEndDebounceRef.current);
+    }
+    // quick live update while dragging
+    scrollEndDebounceRef.current = window.setTimeout(() => {
+      scrollEndDebounceRef.current = null;
+      updateActiveCard();
+    }, 90);
   }
 
   function onPointerUp(e: React.PointerEvent) {
+    if (isAnimatingRef.current) return;
     drag.current.dragging = false;
     try {
       (e.target as Element).releasePointerCapture?.(e.pointerId);
     } catch {}
     const track = trackRef.current;
-    if (track) normalizeScrollIfNeeded(track);
+    if (!track) return;
+
+    // snap to nearest card on pointer up
+    const step = cardWidthRef.current || Math.min(track.clientWidth * 0.86, 360);
+    const single = singleSetWidthRef.current || step * itemsCount;
+    const offset = ((track.scrollLeft - single) % single + single) % single;
+    const targetIndex = Math.round(offset / step);
+    const target = single + targetIndex * step;
+
+    smoothScrollTo(track, target, Math.min(scrollDurationMs, 320), () => {
+      normalizeScrollIfNeeded(track);
+      updateActiveCard();
+    });
   }
 
   function onScroll() {
-    const track = trackRef.current;
-    if (!track) return;
-    normalizeScrollIfNeeded(track);
+    if (scrollEndDebounceRef.current) {
+      clearTimeout(scrollEndDebounceRef.current);
+    }
+    scrollEndDebounceRef.current = window.setTimeout(() => {
+      scrollEndDebounceRef.current = null;
+      const track = trackRef.current;
+      if (!track) return;
+      normalizeScrollIfNeeded(track);
+      updateActiveCard();
+    }, 120);
   }
 
   // pause on user interactions (pointer, wheel, touch, keyboard); reset timer on each action
@@ -325,18 +526,23 @@ export default function Reviews() {
     if (!track) return;
 
     function handlePointerDown() {
+      // ignore while animating
+      if (isAnimatingRef.current) return;
       pauseForInteraction();
     }
     function handleWheel(e: WheelEvent) {
+      if (isAnimatingRef.current) return;
       if (Math.abs(e.deltaX) > 0 || Math.abs(e.deltaY) > 0) pauseForInteraction();
     }
     function handleKey(e: KeyboardEvent) {
+      if (isAnimatingRef.current) return;
       if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
         pauseForInteraction();
         e.key === "ArrowLeft" ? scrollByCard(-1) : scrollByCard(1);
       }
     }
     function handleTouchStart() {
+      if (isAnimatingRef.current) return;
       pauseForInteraction();
     }
 
@@ -345,6 +551,9 @@ export default function Reviews() {
     track.addEventListener("touchstart", handleTouchStart, { passive: true });
     window.addEventListener("keydown", handleKey);
 
+    // initial active mark
+    updateActiveCard();
+
     return () => {
       track.removeEventListener("pointerdown", handlePointerDown);
       track.removeEventListener("wheel", handleWheel);
@@ -352,13 +561,14 @@ export default function Reviews() {
       window.removeEventListener("keydown", handleKey);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [intervalMs, pauseAfterMs, scrollDurationMs]);
 
   // ensure cleanup on unmount
   useEffect(() => {
     return () => {
       stopAutoplay();
       clearResumeTimer();
+      stopSmoothScroll();
     };
   }, []);
 
@@ -380,10 +590,14 @@ export default function Reviews() {
               type="button"
               aria-label="Previous reviews"
               onClick={() => {
+                // clicks ignored if animating (also button is disabled)
+                if (isAnimatingRef.current) return;
                 pauseForInteraction();
                 scrollByCard(-1);
               }}
-              className="hidden sm:inline-flex items-center justify-center h-10 w-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)] shadow-sm hover:shadow-md transition"
+              disabled={isAnimating}
+              aria-disabled={isAnimating}
+              className={`hidden sm:inline-flex items-center justify-center h-10 w-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)] shadow-sm hover:shadow-md transition ${isAnimating ? "opacity-60 cursor-not-allowed" : ""}`}
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
                 <path d="M15 6L9 12l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -394,16 +608,18 @@ export default function Reviews() {
               type="button"
               aria-label="Next reviews"
               onClick={() => {
+                if (isAnimatingRef.current) return;
                 pauseForInteraction();
                 scrollByCard(1);
               }}
-              className="hidden sm:inline-flex items-center justify-center h-10 w-10 rounded-full bg-[var(--color-primary)] text-[var(--color-primary-content)] shadow-sm hover:opacity-95 transition"
+              disabled={isAnimating}
+              aria-disabled={isAnimating}
+              className={`hidden sm:inline-flex items-center justify-center h-10 w-10 rounded-full bg-[var(--color-primary)] text-[var(--color-primary-content)] shadow-sm hover:opacity-95 transition ${isAnimating ? "opacity-60 cursor-not-allowed" : ""}`}
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
                 <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
-            {/* autoplay button removed per request - autoplay always on by default */}
           </div>
         </div>
 
@@ -420,7 +636,10 @@ export default function Reviews() {
             onPointerCancel={() => {
               drag.current.dragging = false;
               const track = trackRef.current;
-              if (track) normalizeScrollIfNeeded(track);
+              if (track) {
+                normalizeScrollIfNeeded(track);
+                updateActiveCard();
+              }
             }}
             onScroll={onScroll}
             className="reviews-track relative flex gap-4 overflow-x-auto snap-x snap-mandatory py-4 px-3 sm:px-6"
@@ -436,19 +655,10 @@ export default function Reviews() {
                 data-review-card
                 role="listitem"
                 aria-labelledby={`review-${r.id}-title`}
-                className="snap-center flex-shrink-0 rounded-2xl p-5 sm:p-6 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm"
+                className="snap-center reviews-card flex-shrink-0 rounded-2xl p-5 sm:p-6 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm"
                 style={{
                   width: "clamp(260px, 75vw, 360px)",
                   minHeight: 220,
-                  transition: "transform 220ms ease, box-shadow 220ms ease",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.transform = "translateY(-6px)";
-                  (e.currentTarget as HTMLElement).style.boxShadow = "0 18px 40px rgba(2,6,23,0.16)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.transform = "";
-                  (e.currentTarget as HTMLElement).style.boxShadow = "";
                 }}
               >
                 <header className="flex items-start gap-3">

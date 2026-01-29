@@ -296,6 +296,487 @@ html, body {
 }
 
 /* -----------------------------
+   New additional themes (light + dark variants)
+   Appended palettes based on user-supplied colors
+   ----------------------------- */
+
+/* Yale Blue palette (light) */
+[data-theme="yale-blue"] {
+  --color-bg: #F8FCFF;
+  --color-bg-rgb: 248,252,255;
+
+  --color-surface: #FFFFFF;
+  --color-surface-rgb: 255,255,255;
+
+  --color-border: #DCEEFF;
+  --color-border-rgb: 220,238,255;
+
+  --color-text: #07203A;            /* dark yale */
+  --color-text-rgb: 7,32,58;
+
+  --color-muted: #5B6F85;
+  --color-muted-rgb: 91,111,133;
+
+  --color-accent: #65AFFF;         /* cool-sky */
+  --color-accent-rgb: 101,175,255;
+
+  --color-primary: #274060;        /* yale-blue */
+  --color-primary-rgb: 39,64,96;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255,255,255;
+
+  --image-overlay: rgba(7,32,58,0.46);
+  --panel-surface-alpha: 0.88;
+
+  --hero-text: #0b1220;
+
+  --announcement-color: rgba(var(--color-accent-rgb,101,175,255), 0.10);
+  --announcement-color-desktop: rgba(var(--color-accent-rgb,101,175,255), 0.12);
+}
+[data-theme="yale-blue"][data-dark="true"] {
+  --color-bg: #071B2C;
+  --color-bg-rgb: 7,27,44;
+
+  --color-surface: #0F2434;
+  --color-surface-rgb: 15,36,52;
+
+  --color-border: #1F3447;
+  --color-border-rgb: 31,52,71;
+
+  --color-text: #EAF6FF;
+  --color-text-rgb: 234,246,255;
+
+  --color-muted: #9FB7CD;
+  --color-muted-rgb: 159,183,205;
+
+  --color-accent: #65AFFF;
+  --color-accent-rgb: 101,175,255;
+
+  --color-primary: #335C81;        /* baltic-blue as stronger primary */
+  --color-primary-rgb: 51,92,129;
+
+  --color-primary-content: #0B1220;
+  --color-primary-content-rgb: 11,18,32;
+
+  --image-overlay: rgba(0,0,0,0.56);
+  --panel-surface-alpha: 0.92;
+
+  --hero-text: #ffffff;
+
+  --announcement-color: rgba(0,0,0,0.32);
+  --announcement-color-desktop: rgba(0,0,0,0.36);
+}
+
+/* Ocean / Deep Twilight palette (Or Blue) */
+[data-theme="ocean-blue"] {
+  --color-bg: #EAF9FF;             /* soft light cyan */
+  --color-bg-rgb: 234,249,255;
+
+  --color-surface: #FFFFFF;
+  --color-surface-rgb: 255,255,255;
+
+  --color-border: #D8F1FB;
+  --color-border-rgb: 216,241,251;
+
+  --color-text: #052437;           /* readable navy-ish */
+  --color-text-rgb: 5,36,55;
+
+  --color-muted: #4A6B78;
+  --color-muted-rgb: 74,107,120;
+
+  --color-accent: #0077B6;         /* bright-teal-blue */
+  --color-accent-rgb: 0,119,182;
+
+  --color-primary: #023E8A;        /* french-blue */
+  --color-primary-rgb: 2,62,138;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255,255,255;
+
+  --image-overlay: rgba(5,36,55,0.44);
+  --panel-surface-alpha: 0.88;
+
+  --hero-text: #ffffff;
+
+  --announcement-color: rgba(var(--color-accent-rgb,0,119,182), 0.10);
+  --announcement-color-desktop: rgba(var(--color-accent-rgb,0,119,182), 0.12);
+}
+[data-theme="ocean-blue"][data-dark="true"] {
+  --color-bg: #02162B;
+  --color-bg-rgb: 2,22,43;
+
+  --color-surface: #082235;
+  --color-surface-rgb: 8,34,53;
+
+  --color-border: #15384B;
+  --color-border-rgb: 21,56,75;
+
+  --color-text: #EAF8FF;
+  --color-text-rgb: 234,248,255;
+
+  --color-muted: #9BCDDC;
+  --color-muted-rgb: 155,205,220;
+
+  --color-accent: #00B4D8;         /* turquoise-surf */
+  --color-accent-rgb: 0,180,216;
+
+  --color-primary: #03045E;        /* deep-twilight */
+  --color-primary-rgb: 3,4,94;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255,255,255;
+
+  --image-overlay: rgba(0,0,0,0.56);
+  --panel-surface-alpha: 0.92;
+
+  --hero-text: #ffffff;
+
+  --announcement-color: rgba(0,0,0,0.32);
+  --announcement-color-desktop: rgba(0,0,0,0.36);
+}
+
+/* Molten Red palette (light) */
+[data-theme="molten-red"] {
+  --color-bg: #FFF6F2;             /* warm near-white */
+  --color-bg-rgb: 255,246,242;
+
+  --color-surface: #FFFFFF;
+  --color-surface-rgb: 255,255,255;
+
+  --color-border: #F7D8D8;
+  --color-border-rgb: 247,216,216;
+
+  --color-text: #3B0D0D;           /* deep red text for contrast */
+  --color-text-rgb: 59,13,13;
+
+  --color-muted: #7F1D1D;
+  --color-muted-rgb: 127,29,29;
+
+  --color-accent: #C1121F;         /* brick-red */
+  --color-accent-rgb: 193,18,31;
+
+  --color-primary: #780000;        /* molten-lava */
+  --color-primary-rgb: 120,0,0;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255,255,255;
+
+  --image-overlay: rgba(59,13,13,0.46);
+  --panel-surface-alpha: 0.88;
+
+  --hero-text: #ffffff;
+
+  --announcement-color: rgba(var(--color-accent-rgb,193,18,31), 0.12);
+  --announcement-color-desktop: rgba(var(--color-accent-rgb,193,18,31), 0.14);
+}
+[data-theme="molten-red"][data-dark="true"] {
+  --color-bg: #0A0606;
+  --color-bg-rgb: 10,6,6;
+
+  --color-surface: #2A0E0E;
+  --color-surface-rgb: 42,14,14;
+
+  --color-border: #401010;
+  --color-border-rgb: 64,16,16;
+
+  --color-text: #FFEDED;
+  --color-text-rgb: 255,237,237;
+
+  --color-muted: #C76B6B;
+  --color-muted-rgb: 199,107,107;
+
+  --color-accent: #EF4444;
+  --color-accent-rgb: 239,68,68;
+
+  --color-primary: #A21112;        /* oxblood / stronger red */
+  --color-primary-rgb: 162,17,18;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255,255,255;
+
+  --image-overlay: rgba(0,0,0,0.6);
+  --panel-surface-alpha: 0.92;
+
+  --hero-text: #ffffff;
+
+  --announcement-color: rgba(0,0,0,0.36);
+  --announcement-color-desktop: rgba(0,0,0,0.40);
+}
+
+/* Racing Red palette (strong, vivid reds) */
+[data-theme="racing-red"] {
+  --color-bg: #FFF3F3;
+  --color-bg-rgb: 255,243,243;
+
+  --color-surface: #FFFFFF;
+  --color-surface-rgb: 255,255,255;
+
+  --color-border: #F8D6D6;
+  --color-border-rgb: 248,214,214;
+
+  --color-text: #2A0B0B;
+  --color-text-rgb: 42,11,11;
+
+  --color-muted: #8A1D1D;
+  --color-muted-rgb: 138,29,29;
+
+  --color-accent: #E40B0B;         /* racing-red */
+  --color-accent-rgb: 228,11,11;
+
+  --color-primary: #C30E0E;        /* brick-ember */
+  --color-primary-rgb: 195,14,14;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255,255,255;
+
+  --image-overlay: rgba(42,11,11,0.46);
+  --panel-surface-alpha: 0.88;
+
+  --hero-text: #ffffff;
+
+  --announcement-color: rgba(var(--color-accent-rgb,228,11,11), 0.12);
+  --announcement-color-desktop: rgba(var(--color-accent-rgb,228,11,11), 0.16);
+}
+[data-theme="racing-red"][data-dark="true"] {
+  --color-bg: #090708;
+  --color-bg-rgb: 9,7,8;
+
+  --color-surface: #2B1515;
+  --color-surface-rgb: 43,21,21;
+
+  --color-border: #3A1515;
+  --color-border-rgb: 58,21,21;
+
+  --color-text: #FFEEEE;
+  --color-text-rgb: 255,238,238;
+
+  --color-muted: #B06B6B;
+  --color-muted-rgb: 176,107,107;
+
+  --color-accent: #DB222A;         /* primary-scarlet for punch */
+  --color-accent-rgb: 219,34,42;
+
+  --color-primary: #611618;        /* night-bordeaux / deep red */
+  --color-primary-rgb: 97,22,24;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255,255,255;
+
+  --image-overlay: rgba(0,0,0,0.56);
+  --panel-surface-alpha: 0.92;
+
+  --hero-text: #ffffff;
+
+  --announcement-color: rgba(0,0,0,0.36);
+  --announcement-color-desktop: rgba(0,0,0,0.40);
+}
+
+/* Texas Classic palette (dark-wine / steel-blue accents) */
+[data-theme="texas-classic"] {
+  --color-bg: #FFF7ED;             /* from original texas input */
+  --color-bg-rgb: 255,247,237;
+
+  --color-surface: #FFFFFF;
+  --color-surface-rgb: 255,255,255;
+
+  --color-border: #F5E8E6;
+  --color-border-rgb: 245,232,230;
+
+  --color-text: #1F2937;
+  --color-text-rgb: 31,41,55;
+
+  --color-muted: #6B7280;
+  --color-muted-rgb: 107,114,128;
+
+  --color-accent: #C00021;         /* strong brick-red */
+  --color-accent-rgb: 192,0,33;
+
+  --color-primary: #407BA7;        /* steel-blue */
+  --color-primary-rgb: 64,123,167;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255,255,255;
+
+  --image-overlay: rgba(31,41,55,0.46);
+  --panel-surface-alpha: 0.88;
+
+  --hero-text: #ffffff;
+
+  --announcement-color: rgba(var(--color-accent-rgb,192,0,33), 0.12);
+  --announcement-color-desktop: rgba(var(--color-accent-rgb,192,0,33), 0.16);
+}
+[data-theme="texas-classic"][data-dark="true"] {
+  --color-bg: #05060B;
+  --color-bg-rgb: 5,6,11;
+
+  --color-surface: #121213;
+  --color-surface-rgb: 18,18,19;
+
+  --color-border: #262626;
+  --color-border-rgb: 38,38,38;
+
+  --color-text: #F3F4F6;
+  --color-text-rgb: 243,244,246;
+
+  --color-muted: #9AA6B2;
+  --color-muted-rgb: 154,166,178;
+
+  --color-accent: #FF002B;         /* racing-red pop */
+  --color-accent-rgb: 255,0,43;
+
+  --color-primary: #004E89;        /* steel-azure / stronger blue */
+  --color-primary-rgb: 0,78,137;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255,255,255;
+
+  --image-overlay: rgba(0,0,0,0.56);
+  --panel-surface-alpha: 0.92;
+
+  --hero-text: #ffffff;
+
+  --announcement-color: rgba(0,0,0,0.32);
+  --announcement-color-desktop: rgba(0,0,0,0.36);
+}
+
+/* Texas Coastal palette (regal/navy + warm accent) */
+[data-theme="texas-coastal"] {
+  --color-bg: #F6FBFF;
+  --color-bg-rgb: 246,251,255;
+
+  --color-surface: #FFFFFF;
+  --color-surface-rgb: 255,255,255;
+
+  --color-border: #E6F3FB;
+  --color-border-rgb: 230,243,251;
+
+  --color-text: #042033;
+  --color-text-rgb: 4,32,51;
+
+  --color-muted: #6A8596;
+  --color-muted-rgb: 106,133,150;
+
+  --color-accent: #F29479;         /* salmon warm accent */
+  --color-accent-rgb: 242,148,121;
+
+  --color-primary: #033270;        /* regal-navy */
+  --color-primary-rgb: 3,50,112;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255,255,255;
+
+  --image-overlay: rgba(4,32,51,0.46);
+  --panel-surface-alpha: 0.88;
+
+  --hero-text: #ffffff;
+
+  --announcement-color: rgba(var(--color-accent-rgb,242,148,121), 0.10);
+  --announcement-color-desktop: rgba(var(--color-accent-rgb,242,148,121), 0.14);
+}
+[data-theme="texas-coastal"][data-dark="true"] {
+  --color-bg: #071424;
+  --color-bg-rgb: 7,20,36;
+
+  --color-surface: #0E222F;
+  --color-surface-rgb: 14,34,47;
+
+  --color-border: #153244;
+  --color-border-rgb: 21,50,68;
+
+  --color-text: #EAF6FF;
+  --color-text-rgb: 234,246,255;
+
+  --color-muted: #A9D2E7;
+  --color-muted-rgb: 169,210,231;
+
+  --color-accent: #EF3C2D;         /* cinnabar tomato accent */
+  --color-accent-rgb: 239,60,45;
+
+  --color-primary: #1368AA;        /* ocean-deep */
+  --color-primary-rgb: 19,104,170;
+
+  --color-primary-content: #0B1220;
+  --color-primary-content-rgb: 11,18,32;
+
+  --image-overlay: rgba(0,0,0,0.56);
+  --panel-surface-alpha: 0.92;
+
+  --hero-text: #ffffff;
+
+  --announcement-color: rgba(0,0,0,0.32);
+  --announcement-color-desktop: rgba(0,0,0,0.36);
+}
+
+/* Texas Grape / Plum palette (deep, wine-forward) */
+[data-theme="texas-plum"] {
+  --color-bg: #F5F3F5;
+  --color-bg-rgb: 245,243,245;
+
+  --color-surface: #FFFFFF;
+  --color-surface-rgb: 255,255,255;
+
+  --color-border: #EDE6EA;
+  --color-border-rgb: 237,230,234;
+
+  --color-text: #2B2430;
+  --color-text-rgb: 43,36,48;
+
+  --color-muted: #7A6A78;
+  --color-muted-rgb: 122,106,120;
+
+  --color-accent: #DB222A;         /* primary-scarlet / strong accent */
+  --color-accent-rgb: 219,34,42;
+
+  --color-primary: #053C5E;        /* yale-blue variant deep */
+  --color-primary-rgb: 5,60,94;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255,255,255;
+
+  --image-overlay: rgba(43,36,48,0.5);
+  --panel-surface-alpha: 0.88;
+
+  --hero-text: #ffffff;
+
+  --announcement-color: rgba(var(--color-accent-rgb,219,34,42), 0.10);
+  --announcement-color-desktop: rgba(var(--color-accent-rgb,219,34,42), 0.14);
+}
+[data-theme="texas-plum"][data-dark="true"] {
+  --color-bg: #0A0710;
+  --color-bg-rgb: 10,7,16;
+
+  --color-surface: #151018;
+  --color-surface-rgb: 21,16,24;
+
+  --color-border: #2B232B;
+  --color-border-rgb: 43,35,43;
+
+  --color-text: #F6EEF2;
+  --color-text-rgb: 246,238,242;
+
+  --color-muted: #B59BA9;
+  --color-muted-rgb: 181,155,169;
+
+  --color-accent: #C32530;         /* flag-red */
+  --color-accent-rgb: 195,37,48;
+
+  --color-primary: #353652;        /* space-indigo / deep slate */
+  --color-primary-rgb: 53,54,82;
+
+  --color-primary-content: #FFFFFF;
+  --color-primary-content-rgb: 255,255,255;
+
+  --image-overlay: rgba(0,0,0,0.56);
+  --panel-surface-alpha: 0.92;
+
+  --hero-text: #ffffff;
+
+  --announcement-color: rgba(0,0,0,0.36);
+  --announcement-color-desktop: rgba(0,0,0,0.40);
+}
+
+/* -----------------------------
    Apply Variables to Tailwind-friendly utility classes
    (keep these simple and consistent)
    ----------------------------- */
@@ -581,7 +1062,8 @@ body {
 
 /* Ensure the viewport hides the scrollbar paint */
 .reviews-viewport {
-  overflow: hidden; /* clip the scrollbar visuals while allowing inner track to scroll */
+  /* allow the active card shadow to show and the pop effect to escape slightly */
+  overflow: visible; /* changed from hidden to visible so elevated cards show their shadow */
   position: relative; /* keep existing positioning behaviour */
 }
 
@@ -613,3 +1095,33 @@ body {
   outline: none;
 }
 /* Keep any existing helper classes you rely on */
+
+/* -----------------------------
+   Small helpers for programmatic animation visual polish
+   - disable native snap while animating (.reviews-track.no-snap)
+   - card pop/active styles (.reviews-card / .reviews-card-active)
+   ----------------------------- */
+
+/* Temporarily disable snapping while we run programmatic animations */
+.reviews-track.no-snap {
+  scroll-snap-type: none !important;
+}
+
+/* Base card transition helpers for smooth pop/scale */
+.reviews-card {
+  transition: transform 240ms cubic-bezier(.2,.9,.2,1), box-shadow 240ms cubic-bezier(.2,.9,.2,1), opacity 180ms ease;
+  will-change: transform, box-shadow, opacity;
+}
+
+/* Centered card "pop" effect */
+.reviews-card.reviews-card-active {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 18px 40px rgba(2,6,23,0.16);
+  z-index: 2;
+}
+
+/* Slightly de-emphasize non-active cards to improve focus */
+.reviews-card:not(.reviews-card-active) {
+  opacity: 0.98;
+  transform-origin: center center;
+}
