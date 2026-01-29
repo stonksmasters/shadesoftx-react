@@ -59,6 +59,14 @@ html, body {
   /* Hero text color (explicit so headings are always readable over images).
      You can override per-theme if a theme absolutely needs a different treatment. */
   --hero-text: #ffffff;
+
+  /* Announcement bar opacity (tunable per-theme / runtime)
+     Range recommendations:
+       - mobile / subtle: 0.06 - 0.12
+       - desktop / stronger: 0.10 - 0.22
+       - dark themes: 0.24 - 0.36
+  */
+  --announcement-alpha: 0.30;
 }
 
 /* Dark mode (default) - balanced, not pure black */
@@ -91,6 +99,9 @@ html, body {
   --panel-surface-alpha: 0.92;
 
   --hero-text: #ffffff;
+
+  /* stronger announcement tint in dark mode for legibility */
+  --announcement-alpha: 0.32;
 }
 
 /* Blue theme */
@@ -121,6 +132,9 @@ html, body {
 
   /* blue theme can keep white hero text */
   --hero-text: #ffffff;
+
+  /* slightly stronger announcement tint for blue theme */
+  --announcement-alpha: 0.12;
 }
 [data-theme="blue"][data-dark="true"] {
   --color-bg: #07122A;
@@ -148,6 +162,8 @@ html, body {
   --color-primary-content-rgb: 11, 18, 32;
 
   --hero-text: #ffffff;
+
+  --announcement-alpha: 0.28;
 }
 
 /* Red theme */
@@ -177,6 +193,9 @@ html, body {
   --color-primary-content-rgb: 255, 255, 255;
 
   --hero-text: #ffffff;
+
+  /* red theme slightly stronger tint */
+  --announcement-alpha: 0.14;
 }
 [data-theme="red"][data-dark="true"] {
   --color-bg: #0A0A0A;
@@ -204,6 +223,8 @@ html, body {
   --color-primary-content-rgb: 255, 255, 255;
 
   --hero-text: #ffffff;
+
+  --announcement-alpha: 0.32;
 }
 
 /* Texas theme */
@@ -233,6 +254,8 @@ html, body {
   --color-primary-content-rgb: 255, 255, 255;
 
   --hero-text: #ffffff;
+
+  --announcement-alpha: 0.12;
 }
 [data-theme="texas"][data-dark="true"] {
   --color-bg: #0C0F12;
@@ -260,6 +283,8 @@ html, body {
   --color-primary-content-rgb: 11, 18, 32;
 
   --hero-text: #ffffff;
+
+  --announcement-alpha: 0.32;
 }
 
 /* -----------------------------
@@ -423,8 +448,8 @@ body {
 .announcement-surface {
   position: relative;
   z-index: 70;
-  /* tint uses accent color with low alpha to keep brand hue but not fully opaque */
-  background-color: rgba(var(--color-accent-rgb, 249,115,22), 0.10);
+  /* use the theme-tunable alpha variable so we can adjust per-theme or at runtime */
+  background-color: rgba(var(--color-accent-rgb, 249,115,22), var(--announcement-alpha));
   backdrop-filter: blur(6px) saturate(105%);
   -webkit-backdrop-filter: blur(6px) saturate(105%);
   color: var(--color-text);
@@ -444,13 +469,14 @@ body {
 /* slightly stronger backdrop for large screens where readability matters more */
 @media (min-width: 769px) {
   .announcement-surface {
-    background-color: rgba(var(--color-accent-rgb, 249,115,22), 0.12);
+    background-color: rgba(var(--color-accent-rgb, 249,115,22), calc(var(--announcement-alpha) * 1.2));
   }
 }
 
-/* dark theme: use a darker tint to keep contrast */
+/* dark theme: use a darker tint to keep contrast (still controlled by --announcement-alpha) */
 [data-dark="true"] .announcement-surface {
-  background-color: rgba(0,0,0,0.32);
+  /* multiply the alpha a bit in dark mode for stronger tinting */
+  background-color: rgba(0, 0, 0, calc(var(--announcement-alpha) * 1.0));
 }
 [data-dark="true"] .announcement-surface::before {
   background: linear-gradient(to bottom, rgba(0,0,0,0.12), rgba(0,0,0,0.06));
@@ -461,3 +487,5 @@ body {
   color: var(--color-primary);
   text-decoration-thickness: 2px;
 }
+
+/* Keep any existing helper classes you rely on */
