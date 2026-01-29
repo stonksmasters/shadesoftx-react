@@ -60,13 +60,14 @@ html, body {
      You can override per-theme if a theme absolutely needs a different treatment. */
   --hero-text: #ffffff;
 
-  /* Announcement bar opacity (tunable per-theme / runtime)
-     Range recommendations:
-       - mobile / subtle: 0.06 - 0.12
-       - desktop / stronger: 0.10 - 0.22
-       - dark themes: 0.24 - 0.36
+  /* Announcement color variables (full rgba strings) — easier to tune at runtime.
+     --announcement-color: color used on mobile / default.
+     --announcement-color-desktop: stronger color used on large screens.
+     You can update these at runtime with:
+       document.documentElement.style.setProperty('--announcement-color', 'rgba(249,115,22,0.22)')
   */
-  --announcement-alpha: 0.30;
+  --announcement-color: rgba(var(--color-accent-rgb, 249,115,22), 0.10);
+  --announcement-color-desktop: rgba(var(--color-accent-rgb, 249,115,22), 0.12);
 }
 
 /* Dark mode (default) - balanced, not pure black */
@@ -100,8 +101,9 @@ html, body {
 
   --hero-text: #ffffff;
 
-  /* stronger announcement tint in dark mode for legibility */
-  --announcement-alpha: 0.32;
+  /* Dark mode: prefer a black-based tint with stronger opacity for legibility */
+  --announcement-color: rgba(0,0,0,0.32);
+  --announcement-color-desktop: rgba(0,0,0,0.36);
 }
 
 /* Blue theme */
@@ -133,8 +135,9 @@ html, body {
   /* blue theme can keep white hero text */
   --hero-text: #ffffff;
 
-  /* slightly stronger announcement tint for blue theme */
-  --announcement-alpha: 0.12;
+  /* theme-specific announcement tint */
+  --announcement-color: rgba(var(--color-accent-rgb,96,165,250), 0.12);
+  --announcement-color-desktop: rgba(var(--color-accent-rgb,96,165,250), 0.14);
 }
 [data-theme="blue"][data-dark="true"] {
   --color-bg: #07122A;
@@ -163,7 +166,8 @@ html, body {
 
   --hero-text: #ffffff;
 
-  --announcement-alpha: 0.28;
+  --announcement-color: rgba(0,0,0,0.28);
+  --announcement-color-desktop: rgba(0,0,0,0.32);
 }
 
 /* Red theme */
@@ -195,7 +199,8 @@ html, body {
   --hero-text: #ffffff;
 
   /* red theme slightly stronger tint */
-  --announcement-alpha: 0.14;
+  --announcement-color: rgba(var(--color-accent-rgb,239,68,68), 0.14);
+  --announcement-color-desktop: rgba(var(--color-accent-rgb,239,68,68), 0.18);
 }
 [data-theme="red"][data-dark="true"] {
   --color-bg: #0A0A0A;
@@ -224,7 +229,8 @@ html, body {
 
   --hero-text: #ffffff;
 
-  --announcement-alpha: 0.32;
+  --announcement-color: rgba(0,0,0,0.32);
+  --announcement-color-desktop: rgba(0,0,0,0.36);
 }
 
 /* Texas theme */
@@ -255,7 +261,8 @@ html, body {
 
   --hero-text: #ffffff;
 
-  --announcement-alpha: 0.12;
+  --announcement-color: rgba(var(--color-accent-rgb,239,68,68), 0.12);
+  --announcement-color-desktop: rgba(var(--color-accent-rgb,239,68,68), 0.16);
 }
 [data-theme="texas"][data-dark="true"] {
   --color-bg: #0C0F12;
@@ -284,7 +291,8 @@ html, body {
 
   --hero-text: #ffffff;
 
-  --announcement-alpha: 0.32;
+  --announcement-color: rgba(0,0,0,0.32);
+  --announcement-color-desktop: rgba(0,0,0,0.36);
 }
 
 /* -----------------------------
@@ -444,12 +452,13 @@ body {
   color: var(--color-text);
 }
 
-/* Announcement bar surface: slightly blurred + tinted overlay so it's not crystal-clear */
+/* Announcement bar surface: slightly blurred + tinted overlay so it's not crystal-clear
+   Uses the theme/runtime-tunable --announcement-color variables for robust control.
+*/
 .announcement-surface {
   position: relative;
   z-index: 70;
-  /* use the theme-tunable alpha variable so we can adjust per-theme or at runtime */
-  background-color: rgba(var(--color-accent-rgb, 249,115,22), var(--announcement-alpha));
+  background-color: var(--announcement-color);
   backdrop-filter: blur(6px) saturate(105%);
   -webkit-backdrop-filter: blur(6px) saturate(105%);
   color: var(--color-text);
@@ -469,17 +478,8 @@ body {
 /* slightly stronger backdrop for large screens where readability matters more */
 @media (min-width: 769px) {
   .announcement-surface {
-    background-color: rgba(var(--color-accent-rgb, 249,115,22), calc(var(--announcement-alpha) * 1.2));
+    background-color: var(--announcement-color-desktop);
   }
-}
-
-/* dark theme: use a darker tint to keep contrast (still controlled by --announcement-alpha) */
-[data-dark="true"] .announcement-surface {
-  /* multiply the alpha a bit in dark mode for stronger tinting */
-  background-color: rgba(0, 0, 0, calc(var(--announcement-alpha) * 1.0));
-}
-[data-dark="true"] .announcement-surface::before {
-  background: linear-gradient(to bottom, rgba(0,0,0,0.12), rgba(0,0,0,0.06));
 }
 
 /* Accessibility: ensure links inside announcement remain readable */
@@ -488,4 +488,3 @@ body {
   text-decoration-thickness: 2px;
 }
 
-/* Keep any existing helper classes you rely on */
