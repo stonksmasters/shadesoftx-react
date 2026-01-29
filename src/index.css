@@ -575,5 +575,41 @@ body {
 .app-no-x-overflow {
   overflow-x: hidden;
 }
+/* Hide the horizontal scrollbar completely while preserving scroll behavior.
+   Minimal and safe: add this near your reviews rules (e.g. next to .reviews-track / .reviews-viewport).
+*/
 
+/* Ensure the viewport hides the scrollbar paint */
+.reviews-viewport {
+  overflow: hidden; /* clip the scrollbar visuals while allowing inner track to scroll */
+  position: relative; /* keep existing positioning behaviour */
+}
+
+/* Ensure the track still scrolls smoothly on touch devices */
+.reviews-track {
+  -webkit-overflow-scrolling: touch;
+  overflow-x: auto;
+  /* hide scrollbars in Firefox/modern browsers */
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* IE 10+ / Edge Legacy */
+}
+
+/* Hide WebKit scrollbars (Chrome/Safari/Edge Chromium) */
+.reviews-track::-webkit-scrollbar {
+  height: 0;
+  width: 0;
+  display: none; /* hide legacy WebKit scrollbar */
+}
+
+/* Defensive: in case any other rule shows a thin track, force no visual track/thumb */
+.reviews-track::-webkit-scrollbar-thumb,
+.reviews-track::-webkit-scrollbar-track {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Optional: keep keyboard focus visible on the clipped viewport */
+.reviews-viewport:focus-within {
+  outline: none;
+}
 /* Keep any existing helper classes you rely on */

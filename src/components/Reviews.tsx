@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 
 type Review = {
@@ -138,155 +138,240 @@ function Stars({ value }: { value: number }) {
 }
 
 export default function Reviews() {
-  // We'll build a looping track by prepending & appending a copy of the dataset.
-  // The track will begin positioned at the middle copy so users can scroll left/right seamlessly.
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const [autoplay, setAutoplay] = useState(true);
-  const autoplayRef = useRef<number | null>(null);
-  const drag = useRef({ startX: 0, scrollLeft: 0, dragging: false });
-  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
-  // create extended list: [copy, original, copy]
+  // RAF autoplay
+  const rafRef = useRef<number | null>(null);
+  const lastFrameRef = useRef<number | null>(null);
+  const resumeTimerRef = useRef<number | null>(null);
+
+  // drag state
+  const drag = useRef({
+    startX: 0,
+    lastX: 0,
+    scrollLeft: 0,
+    dragging: false,
+  });
+
   const reviews = [...baseReviews];
   const extended = [...reviews.map((r) => ({ ...r, id: `m-${r.id}` })), ...reviews, ...reviews.map((r) => ({ ...r, id: `p-${r.id}` }))];
 
-  // measured card width (includes margin) and derived values
   const cardWidthRef = useRef<number>(0);
   const singleSetWidthRef = useRef<number>(0);
   const itemsCount = reviews.length;
 
-  // Measure card width and set initial scroll position to the middle set
+  // tuning
+  const speedPxPerSec = 70;
+  const pauseAfterMs = 3000;
+
+  // manual action rate limit (arrows / keys)
+  const lastManualActionRef = useRef<number>(0);
+  const MANUAL_ACTION_MIN_MS = 350;
+
+  // swipe tuning
+  const SWIPE_THRESHOLD = 10; // px - movement must exceed this to be considered a swipe
+  const MAX_MOVE_PER_EVENT = 240; // px limit per move event to avoid huge jumps
+
+  // measure & position center copy
   useEffect(() => {
     function measure() {
       const track = trackRef.current;
       if (!track) return;
-      const firstCard = track.querySelector<HTMLElement>('[data-review-card]');
-      const gap = parseInt(getComputedStyle(track).columnGap || getComputedStyle(track).gap || "16", 10) || 16;
+      const firstCard = track.querySelector<HTMLElement>("[data-review-card]");
+      const gap = parseInt(getComputedStyle(track).gap || getComputedStyle(track).columnGap || "16", 10) || 16;
       const cardWidth = firstCard ? firstCard.clientWidth : Math.min(track.clientWidth * 0.86, 360);
       cardWidthRef.current = cardWidth + gap;
       singleSetWidthRef.current = cardWidthRef.current * itemsCount;
 
-      // Position at middle set (the second chunk)
-      // small timeout/rAF to ensure layout stable
       requestAnimationFrame(() => {
-        track.scrollLeft = singleSetWidthRef.current;
+        if (track) track.scrollLeft = singleSetWidthRef.current;
       });
     }
 
     measure();
-    // observe resize to re-measure
-    resizeObserverRef.current = new ResizeObserver(() => measure());
-    resizeObserverRef.current.observe(document.documentElement);
+    const ro = new ResizeObserver(measure);
+    ro.observe(document.documentElement);
     window.addEventListener("orientationchange", measure);
     return () => {
-      resizeObserverRef.current?.disconnect();
+      ro.disconnect();
       window.removeEventListener("orientationchange", measure);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // autoplay logic
+  // autoplay lifecycle
   useEffect(() => {
-    if (!autoplay) return;
-    autoplayRef.current = window.setInterval(() => {
-      scrollByCard(1);
-    }, 4500);
+    startAutoplay();
     return () => {
-      if (autoplayRef.current) {
-        window.clearInterval(autoplayRef.current);
-        autoplayRef.current = null;
-      }
+      stopAutoplay();
+      clearResumeTimer();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoplay]);
+  }, []);
 
-  // helper clamp/jump to create infinite loop
-  function normalizeScrollIfNeeded() {
-    const track = trackRef.current;
-    if (!track) return;
-    const single = singleSetWidthRef.current;
-    if (single === 0) return;
+  function startAutoplay() {
+    if (rafRef.current) return;
+    lastFrameRef.current = performance.now();
+    const loop = (now: number) => {
+      const track = trackRef.current;
+      if (!track) {
+        rafRef.current = null;
+        return;
+      }
+      const last = lastFrameRef.current ?? now;
+      const dt = Math.min(40, Math.max(8, now - last));
+      lastFrameRef.current = now;
 
-    // If we've scrolled too far left or right, jump without animation to the equivalent position
-    if (track.scrollLeft <= single * 0.5) {
-      // jumped into the first copy region -> move to middle copy
-      const newLeft = track.scrollLeft + single;
-      track.scrollTo({ left: newLeft, behavior: "auto" });
-    } else if (track.scrollLeft >= single * 1.5) {
-      // jumped into the last copy region -> move to middle copy
-      const newLeft = track.scrollLeft - single;
-      track.scrollTo({ left: newLeft, behavior: "auto" });
+      const dx = (speedPxPerSec * dt) / 1000;
+      track.scrollLeft = track.scrollLeft + dx;
+      normalizeScrollIfNeeded(track);
+
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    rafRef.current = requestAnimationFrame(loop);
+  }
+
+  function stopAutoplay() {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    lastFrameRef.current = null;
+  }
+
+  function clearResumeTimer() {
+    if (resumeTimerRef.current) {
+      clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = null;
     }
   }
 
-  // scroll by "one card" approximated by measured cardWidthRef
-  function scrollByCard(direction = 1) {
-    const track = trackRef.current;
-    if (!track) return;
-    const step = cardWidthRef.current || Math.min(track.clientWidth * 0.86, 360);
-    const left = track.scrollLeft + direction * step;
-    track.scrollTo({ left, behavior: "smooth" });
+  // Called when an explicit interaction should pause autoplay (swipe end or arrow/key/button).
+  function pauseForInteraction() {
+    stopAutoplay();
+    clearResumeTimer();
+    resumeTimerRef.current = window.setTimeout(() => {
+      resumeTimerRef.current = null;
+      lastFrameRef.current = performance.now();
+      startAutoplay();
+    }, pauseAfterMs);
   }
 
-  // pointer handlers for drag-to-scroll
-  function onPointerDown(e: React.PointerEvent) {
-    const track = trackRef.current;
-    if (!track) return;
-    drag.current.dragging = true;
-    drag.current.startX = e.clientX;
-    drag.current.scrollLeft = track.scrollLeft;
-    setAutoplay(false);
-    (e.target as Element).setPointerCapture?.(e.pointerId);
-  }
+  // Robust normalization: map any scrollLeft into the middle copy while preserving offset
+  function normalizeScrollIfNeeded(track: HTMLDivElement) {
+    const single = singleSetWidthRef.current;
+    if (!single) return;
+    const total = track.scrollLeft;
+    // if we're within middle range, nothing to do
+    const min = single * 0.5;
+    const max = single * 1.5;
+    if (total > min && total < max) return;
 
-  function onPointerMove(e: React.PointerEvent) {
-    if (!drag.current.dragging) return;
-    const track = trackRef.current;
-    if (!track) return;
-    const dx = e.clientX - drag.current.startX;
-    track.scrollLeft = clamp(track.scrollLeft - dx);
-  }
-
-  function onPointerUp(e: React.PointerEvent) {
-    drag.current.dragging = false;
-    try {
-      (e.target as Element).releasePointerCapture?.(e.pointerId);
-    } catch {}
-    normalizeScrollIfNeeded();
-  }
-
-  function onScroll() {
-    // called frequently; normalize when user stops near edges
-    // We run quick check and schedule normalize after small delay to avoid janky jumps while scrolling
-    // Using requestAnimationFrame to batch
-    normalizeScrollIfNeeded();
+    // compute offset modulo single and place into middle copy
+    const offset = ((total - single) % single + single) % single;
+    track.scrollLeft = single + offset;
   }
 
   function clamp(value: number) {
     const track = trackRef.current;
     if (!track) return value;
     const max = track.scrollWidth - track.clientWidth;
-    if (value < 0) return 0;
-    if (value > max) return max;
-    return value;
+    return Math.max(0, Math.min(max, value));
   }
 
-  // Keyboard left/right support on the track
-  useEffect(() => {
+  // scroll by one card (arrow buttons / keyboard)
+  function scrollByCard(direction = 1) {
+    const now = Date.now();
+    if (now - lastManualActionRef.current < MANUAL_ACTION_MIN_MS) return; // rate limit
+    lastManualActionRef.current = now;
+
     const track = trackRef.current;
     if (!track) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "ArrowRight") {
-        setAutoplay(false);
-        scrollByCard(1);
-      } else if (e.key === "ArrowLeft") {
-        setAutoplay(false);
-        scrollByCard(-1);
+    const step = cardWidthRef.current || Math.min(track.clientWidth * 0.86, 360);
+    const left = clamp(track.scrollLeft + direction * step);
+    // explicit interaction -> pause & schedule resume
+    pauseForInteraction();
+    track.scrollTo({ left, behavior: "smooth" });
+  }
+
+  // Pointer (drag) handlers
+  function onPointerDown(e: React.PointerEvent) {
+    const track = trackRef.current;
+    if (!track) return;
+    drag.current.dragging = true;
+    drag.current.startX = e.clientX;
+    drag.current.lastX = e.clientX;
+    drag.current.scrollLeft = track.scrollLeft;
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    // Do not pause autoplay here; we only pause when the user finishes a swipe that actually moved.
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    if (!drag.current.dragging) return;
+    const track = trackRef.current;
+    if (!track) return;
+
+    // incremental movement since last event — this avoids using an absolute baseline and allows a smooth drag
+    const rawMove = e.clientX - drag.current.lastX;
+    // limit per-event move to prevent huge jumps when device reports large deltas
+    const move = Math.max(-MAX_MOVE_PER_EVENT, Math.min(MAX_MOVE_PER_EVENT, rawMove));
+
+    // user moved pointer to the right (positive move) -> we should scroll left (drag behavior)
+    track.scrollLeft = clamp(track.scrollLeft - move);
+
+    drag.current.lastX = e.clientX;
+  }
+
+  function onPointerUp(e: React.PointerEvent) {
+    const track = trackRef.current;
+    if (!track) return;
+    // total displacement from down -> up
+    const totalMoved = Math.abs(drag.current.startX - drag.current.lastX);
+    drag.current.dragging = false;
+    try {
+      (e.target as Element).releasePointerCapture?.(e.pointerId);
+    } catch {}
+
+    normalizeScrollIfNeeded(track);
+
+    // Only treat as an explicit interaction (pause/resume) if user actually swiped beyond threshold
+    if (totalMoved > SWIPE_THRESHOLD) {
+      pauseForInteraction();
+    }
+  }
+
+  function onScroll() {
+    const track = trackRef.current;
+    if (!track) return;
+    normalizeScrollIfNeeded(track);
+  }
+
+  // Keyboard: only act when track is focused
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      const track = trackRef.current;
+      if (!track) return;
+      if (document.activeElement === track) {
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          scrollByCard(-1); // scrollByCard handles pause + rate-limit
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          scrollByCard(1);
+        }
       }
     }
-    track.addEventListener("keydown", onKey);
-    return () => track.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopAutoplay();
+      clearResumeTimer();
+    };
   }, []);
 
   return (
@@ -307,7 +392,6 @@ export default function Reviews() {
               type="button"
               aria-label="Previous reviews"
               onClick={() => {
-                setAutoplay(false);
                 scrollByCard(-1);
               }}
               className="hidden sm:inline-flex items-center justify-center h-10 w-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)] shadow-sm hover:shadow-md transition"
@@ -321,7 +405,6 @@ export default function Reviews() {
               type="button"
               aria-label="Next reviews"
               onClick={() => {
-                setAutoplay(false);
                 scrollByCard(1);
               }}
               className="hidden sm:inline-flex items-center justify-center h-10 w-10 rounded-full bg-[var(--color-primary)] text-[var(--color-primary-content)] shadow-sm hover:opacity-95 transition"
@@ -330,20 +413,11 @@ export default function Reviews() {
                 <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
-
-            <button
-              type="button"
-              aria-pressed={!autoplay}
-              onClick={() => setAutoplay((s) => !s)}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text)] shadow-sm hover:shadow-md transition"
-            >
-              {autoplay ? "Auto" : "Pause"}
-            </button>
+            {/* autoplay button removed per request - autoplay always on by default */}
           </div>
         </div>
 
-        {/* Scrollable track wrapper hides any overflow and provides comfortable side padding */}
-        <div className="relative -mx-3 sm:-mx-6"> 
+        <div className="relative -mx-3 sm:-mx-6">
           <div
             ref={trackRef}
             tabIndex={0}
@@ -354,7 +428,8 @@ export default function Reviews() {
             onPointerUp={onPointerUp}
             onPointerCancel={() => {
               drag.current.dragging = false;
-              normalizeScrollIfNeeded();
+              const track = trackRef.current;
+              if (track) normalizeScrollIfNeeded(track);
             }}
             onScroll={onScroll}
             className="reviews-track relative flex gap-4 overflow-x-auto snap-x snap-mandatory py-4 px-3 sm:px-6"
@@ -456,7 +531,6 @@ export default function Reviews() {
           </div>
         </div>
 
-        {/* small paging hint for mobile */}
         <div className="mt-4 text-center text-xs text-muted">Swipe to browse reviews • Use arrows on desktop</div>
       </div>
     </section>
