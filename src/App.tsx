@@ -4,6 +4,7 @@ import Hero from "./components/Hero";
 import Services from "./components/Services";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
+import Reviews from "./components/Reviews";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Hero />
         <Services />
         <Contact />
+        <Reviews />
       </main>
       <Footer />
     </BrowserRouter>

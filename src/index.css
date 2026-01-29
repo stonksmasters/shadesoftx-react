@@ -303,6 +303,9 @@ html, body {
 body {
   background-color: var(--color-bg);
   color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
 }
 
 .bg-bg { background-color: var(--color-bg); }
@@ -488,3 +491,89 @@ body {
   text-decoration-thickness: 2px;
 }
 
+/* -----------------------------
+   Reviews track styles & scrollbar polish
+   (keeps the horizontal scroll consistent, hides overflow artifacts,
+    and gives a themed scrollbar for desktop browsers)
+   ----------------------------- */
+
+/* .reviews-track is the container class used by the Reviews component */
+.reviews-track {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  overflow-x: auto;
+  display: flex;
+  gap: 16px;
+  padding-bottom: 10px; /* space for styled scrollbar */
+  scrollbar-width: thin; /* Firefox */
+  -ms-overflow-style: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ensure cards don't overflow rounded corners or bleed shadows */
+.reviews-track [data-review-card] {
+  box-sizing: border-box;
+  overflow: hidden;
+  min-width: 0; /* important for truncation inside flex items */
+}
+
+/* WebKit browsers: horizontal scrollbar styling */
+.reviews-track::-webkit-scrollbar {
+  height: 10px;
+}
+.reviews-track::-webkit-scrollbar-track {
+  background: rgba(var(--color-border-rgb, 230,233,242), 0.12);
+  border-radius: 999px;
+  margin-inline: 8px;
+}
+.reviews-track::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(var(--color-primary-rgb,37,99,235),0.92), rgba(var(--color-primary-rgb,37,99,235),0.75));
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(2,6,23,0.12);
+  min-height: 24px;
+}
+.reviews-track::-webkit-scrollbar-thumb:hover {
+  filter: brightness(0.95);
+}
+
+/* Firefox: better-looking thin thumb */
+@supports (scrollbar-width: thin) {
+  .reviews-track {
+    scrollbar-width: thin;
+  }
+}
+
+/* Hide the native scrollbar on small mobile devices for cleaner look */
+@media (max-width: 640px) {
+  .reviews-track {
+    scrollbar-width: none;
+  }
+  .reviews-track::-webkit-scrollbar {
+    display: none;
+  }
+  .reviews-track {
+    padding-bottom: 6px; /* less padding on mobile */
+  }
+}
+
+/* Clip any outer shadows so cards can't visually overflow the track area */
+.reviews-track {
+  -webkit-mask-image: -webkit-gradient(linear, left top, right top, color-stop(0, black), color-stop(0.02, transparent), color-stop(0.98, transparent), color-stop(1, black));
+  mask-image: linear-gradient(90deg, transparent 0%, black 2%, black 98%, transparent 100%);
+}
+
+/* Focus styles for keyboard users */
+.reviews-track:focus {
+  outline: none;
+}
+.reviews-track:focus-visible {
+  box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb,37,99,235), 0.10);
+  border-radius: 12px;
+}
+
+/* Small helper to reduce potential page-level horizontal overflow caused by wide cards */
+.app-no-x-overflow {
+  overflow-x: hidden;
+}
+
+/* Keep any existing helper classes you rely on */
